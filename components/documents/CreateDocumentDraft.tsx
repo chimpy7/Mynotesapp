@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { RichTextEditor } from "@/components/editor/RichTextEditor";
 
@@ -25,6 +25,7 @@ type CreateDocumentDraftProps = {
 };
 
 const defaultDraftTitle = "Untitled document";
+const autoSaveDelayMs = 4000;
 
 export function CreateDocumentDraft({ initialDocument }: CreateDocumentDraftProps) {
   const [documentId, setDocumentId] = useState<string | null>(
@@ -38,8 +39,27 @@ export function CreateDocumentDraft({ initialDocument }: CreateDocumentDraftProp
   );
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [statusMessage, setStatusMessage] = useState("");
+  const [draftRevision, setDraftRevision] = useState(0);
+  const [savedRevision, setSavedRevision] = useState(0);
+  const draftRevisionRef = useRef(0);
+  const isSavingRef = useRef(false);
 
-  const saveDraft = useCallback(async () => {
+  const markDraftDirty = useCallback(() => {
+    draftRevisionRef.current += 1;
+    setDraftRevision(draftRevisionRef.current);
+
+    if (status !== "saving") {
+      setStatus("idle");
+      setStatusMessage("");
+    }
+  }, [status]);
+
+  const saveDraft = useCallback(async (revisionToSave = draftRevision) => {
+    if (isSavingRef.current) {
+      return;
+    }
+
+    isSavingRef.current = true;
     setStatus("saving");
     setStatusMessage("");
 
@@ -71,16 +91,56 @@ export function CreateDocumentDraft({ initialDocument }: CreateDocumentDraftProp
       }
 
       setDocumentId(data.document.id);
-      setStatus("saved");
-      setStatusMessage("Draft saved");
+      setSavedRevision((currentRevision) =>
+        Math.max(currentRevision, revisionToSave),
+      );
+
+      if (draftRevisionRef.current > revisionToSave) {
+        setStatus("idle");
+        setStatusMessage("");
+      } else {
+        setStatus("saved");
+        setStatusMessage("Draft saved");
+      }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Could not save draft.";
 
       setStatus("error");
       setStatusMessage(message);
+    } finally {
+      isSavingRef.current = false;
     }
-  }, [documentId, serializedContent, title]);
+  }, [documentId, draftRevision, serializedContent, title]);
+
+  useEffect(() => {
+    if (
+      draftRevision <= savedRevision ||
+      status === "saving" ||
+      status === "error"
+    ) {
+      return;
+    }
+
+    const revisionToSave = draftRevision;
+    const timeoutId = window.setTimeout(() => {
+      void saveDraft(revisionToSave);
+    }, autoSaveDelayMs);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [draftRevision, saveDraft, savedRevision, status]);
+
+  const handleSerializedChange = useCallback(
+    (nextSerializedContent: string) => {
+      if (serializedContent === nextSerializedContent) {
+        return;
+      }
+
+      setSerializedContent(nextSerializedContent);
+      markDraftDirty();
+    },
+    [markDraftDirty, serializedContent],
+  );
 
   return (
     <>
@@ -95,10 +155,7 @@ export function CreateDocumentDraft({ initialDocument }: CreateDocumentDraftProp
             maxLength={120}
             onChange={(event) => {
               setTitle(event.target.value);
-              if (status !== "idle") {
-                setStatus("idle");
-                setStatusMessage("");
-              }
+              markDraftDirty();
             }}
             placeholder={defaultDraftTitle}
             type="text"
@@ -114,7 +171,7 @@ export function CreateDocumentDraft({ initialDocument }: CreateDocumentDraftProp
           <button
             className="inline-flex h-10 items-center justify-center rounded-md bg-zinc-900 px-4 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-400"
             disabled={status === "saving"}
-            onClick={saveDraft}
+            onClick={() => void saveDraft()}
             type="button"
           >
             {status === "saving" ? "Saving..." : "Save draft"}
@@ -135,7 +192,7 @@ export function CreateDocumentDraft({ initialDocument }: CreateDocumentDraftProp
       <section aria-label="Document editor">
         <RichTextEditor
           initialEditorState={initialDocument?.serializedContent ?? undefined}
-          onSerializedChange={setSerializedContent}
+          onSerializedChange={handleSerializedChange}
         />
       </section>
     </>
