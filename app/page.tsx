@@ -1,37 +1,64 @@
 import { Show } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
+import { Types } from "mongoose";
 import { AuthControls } from "@/components/auth/AuthControls";
-import { RichTextEditor } from "@/components/editor/RichTextEditor";
+import { CreateDocumentDraft } from "@/components/documents/CreateDocumentDraft";
+import { ensureCurrentUser } from "@/lib/users";
+import { DocumentModel } from "@/models/Document";
 
-export default function Home() {
+type HomeProps = {
+  searchParams?: Promise<{
+    documentId?: string | string[];
+  }>;
+};
+
+export default async function Home({ searchParams }: HomeProps) {
+  const { userId } = await auth();
+  const resolvedSearchParams = await searchParams;
+  const rawDocumentId = resolvedSearchParams?.documentId;
+  const documentId = Array.isArray(rawDocumentId)
+    ? rawDocumentId[0]
+    : rawDocumentId;
+  let initialDocument:
+    | {
+        id: string;
+        title: string;
+        serializedContent: string | null;
+      }
+    | undefined;
+
+  if (userId) {
+    await ensureCurrentUser();
+
+    if (documentId && Types.ObjectId.isValid(documentId)) {
+      const document = await DocumentModel.findOne({
+        _id: documentId,
+        userId,
+      })
+        .select("title content")
+        .exec();
+
+      if (document) {
+        initialDocument = {
+          id: document._id.toString(),
+          title: document.title,
+          serializedContent: document.content
+            ? JSON.stringify(document.content)
+            : null,
+        };
+      }
+    }
+  }
+
   return (
     <main className="min-h-screen bg-zinc-50 px-4 py-8 text-zinc-950 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-        <header className="flex flex-col gap-3 border-b border-zinc-200 pb-6">
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">
-              Create document
-            </p>
-            <AuthControls />
-          </div>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-3xl font-semibold tracking-normal">
-                Untitled document
-              </h1>
-              <p className="mt-2 max-w-2xl text-base leading-7 text-zinc-600">
-                Draft first, organize into categories later.
-              </p>
-            </div>
-            <Show when="signed-in">
-              <button
-                className="inline-flex h-10 items-center justify-center rounded-md bg-zinc-900 px-4 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
-                type="button"
-              >
-                Save draft
-              </button>
-            </Show>
-          </div>
-        </header>
+        <div className="flex items-center justify-between gap-4 border-b border-zinc-200 pb-4">
+          <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">
+            Create document
+          </p>
+          <AuthControls />
+        </div>
 
         <Show when="signed-out">
           <section className="rounded-lg border border-zinc-200 bg-white px-6 py-8 shadow-sm">
@@ -46,9 +73,7 @@ export default function Home() {
         </Show>
 
         <Show when="signed-in">
-          <section aria-label="Document editor">
-            <RichTextEditor />
-          </section>
+          <CreateDocumentDraft initialDocument={initialDocument} />
         </Show>
       </div>
     </main>
