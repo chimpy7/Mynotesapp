@@ -9,7 +9,7 @@ export function AuthControls() {
   return (
     <div className="flex items-center gap-2">
       <Show when="signed-out">
-        <SignInButton mode="modal">
+        <SignInButton fallbackRedirectUrl="/documents" mode="modal">
           <button
             className="inline-flex h-10 items-center justify-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-100"
             type="button"
@@ -17,7 +17,7 @@ export function AuthControls() {
             Sign in
           </button>
         </SignInButton>
-        <SignUpButton mode="modal">
+        <SignUpButton fallbackRedirectUrl="/documents" mode="modal">
           <button
             className="inline-flex h-10 items-center justify-center rounded-md bg-zinc-900 px-4 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
             type="button"

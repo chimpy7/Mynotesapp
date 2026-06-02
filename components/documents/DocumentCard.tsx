@@ -16,7 +16,7 @@ export function DocumentCard({ document }: DocumentCardProps) {
   return (
     <Link
       className="block rounded-lg border border-zinc-200 bg-white p-5 shadow-sm transition-colors hover:border-zinc-300 hover:bg-zinc-50"
-      href={`/?documentId=${document.id}`}
+      href={`/write?documentId=${document.id}`}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">

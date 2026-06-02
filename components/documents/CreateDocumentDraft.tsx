@@ -83,6 +83,9 @@ function DocumentDraftHeader({
         >
           {status === "saving" ? "Saving..." : "Save draft"}
         </button>
+        <a href="/" className="inline-flex h-10 items-center justify-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100">
+          Back to documents
+        </a>
         {statusMessage ? (
           <p
             className={`text-sm ${

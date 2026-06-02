@@ -1,10 +1,9 @@
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { AuthControls } from "@/components/auth/AuthControls";
-import {
-  DocumentList,
-} from "@/components/documents/DocumentList";
+import { DocumentList } from "@/components/documents/DocumentList";
 import { connectToDatabase } from "@/lib/db";
 import { ensureCurrentUser } from "@/lib/users";
 import { DocumentModel } from "@/models/Document";
@@ -48,23 +47,7 @@ export default async function DocumentsPage() {
   const { userId } = await auth();
 
   if (!userId) {
-    return (
-      <main className="min-h-screen bg-zinc-50 px-4 py-8 text-zinc-950 sm:px-6 lg:px-8">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-          <div className="flex items-center justify-between gap-4 border-b border-zinc-200 pb-4">
-            <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">
-              Documents
-            </p>
-            <AuthControls />
-          </div>
-          <section className="rounded-lg border border-zinc-200 bg-white px-6 py-8 shadow-sm">
-            <h1 className="text-xl font-semibold tracking-normal">
-              Sign in to view your documents
-            </h1>
-          </section>
-        </div>
-      </main>
-    );
+    redirect("/sign-in");
   }
 
   await ensureCurrentUser();
@@ -104,7 +87,7 @@ export default async function DocumentsPage() {
           </div>
           <Link
             className="inline-flex h-10 items-center justify-center rounded-md bg-zinc-900 px-4 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
-            href="/"
+            href="/write"
           >
             New document
           </Link>
