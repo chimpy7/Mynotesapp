@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { ZodError } from "zod";
 
+import { validateCategoryTarget } from "@/lib/categoryAccess";
 import { ensureCurrentUser } from "@/lib/users";
 import { DocumentModel } from "@/models/Document";
 import { createDocumentSchema } from "@/schemas/document";
@@ -20,11 +21,15 @@ export async function POST(request: NextRequest) {
 
     await ensureCurrentUser();
 
+    const { categoryObjectId, subcategoryObjectId } =
+      await validateCategoryTarget(userId, body);
+
     const document = await DocumentModel.create({
-      ...body,
+      title: body.title,
+      content: body.content ?? null,
       userId,
-      categoryId: body.categoryId ?? null,
-      subcategoryId: body.subcategoryId ?? null,
+      categoryId: categoryObjectId,
+      subcategoryId: subcategoryObjectId,
     });
 
     return NextResponse.json(

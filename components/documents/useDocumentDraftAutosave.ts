@@ -97,8 +97,6 @@ export function useDocumentDraftAutosave({
         body: JSON.stringify({
           title: titleToSave,
           content,
-          categoryId: null,
-          subcategoryId: null,
         }),
       });
 

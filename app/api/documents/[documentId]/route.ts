@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 import { NextResponse, type NextRequest } from "next/server";
 import { ZodError } from "zod";
 
+import { validateCategoryTarget } from "@/lib/categoryAccess";
 import { ensureCurrentUser } from "@/lib/users";
 import { DocumentModel } from "@/models/Document";
 import { updateDocumentSchema } from "@/schemas/document";
@@ -33,13 +34,32 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     await ensureCurrentUser();
 
+    const update: {
+      title?: string;
+      content?: unknown;
+      categoryId?: Types.ObjectId | null;
+      subcategoryId?: Types.ObjectId | null;
+    } = {};
+
+    if ("title" in body) {
+      update.title = body.title;
+    }
+
+    if ("content" in body) {
+      update.content = body.content ?? null;
+    }
+
+    if ("categoryId" in body || "subcategoryId" in body) {
+      const { categoryObjectId, subcategoryObjectId } =
+        await validateCategoryTarget(userId, body);
+
+      update.categoryId = categoryObjectId;
+      update.subcategoryId = subcategoryObjectId;
+    }
+
     const document = await DocumentModel.findOneAndUpdate(
       { _id: documentId, userId },
-      {
-        ...body,
-        categoryId: body.categoryId ?? null,
-        subcategoryId: body.subcategoryId ?? null,
-      },
+      update,
       { returnDocument: "after", runValidators: true },
     );
 
