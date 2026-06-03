@@ -16,6 +16,10 @@ type RouteContext = {
   }>;
 };
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export async function POST(request: NextRequest, context: RouteContext) {
   const { userId } = await auth();
 
@@ -34,8 +38,22 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     await ensureCurrentUser();
 
+    const duplicateNamePattern = new RegExp(
+      `^${escapeRegExp(body.name)}$`,
+      "i",
+    );
     const category = await CategoryModel.findOneAndUpdate(
-      { _id: categoryId, userId },
+      {
+        _id: categoryId,
+        userId,
+        subcategories: {
+          $not: {
+            $elemMatch: {
+              name: duplicateNamePattern,
+            },
+          },
+        },
+      },
       {
         $push: {
           subcategories: {
@@ -47,6 +65,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
     );
 
     if (!category) {
+      const categoryExists = await CategoryModel.exists({
+        _id: categoryId,
+        userId,
+      });
+
+      if (categoryExists) {
+        return NextResponse.json(
+          { error: "A subcategory with this name already exists." },
+          { status: 409 },
+        );
+      }
+
       return NextResponse.json(
         { error: "Category not found." },
         { status: 404 },

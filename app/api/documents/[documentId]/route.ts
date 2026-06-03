@@ -95,3 +95,40 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export async function DELETE(_request: NextRequest, context: RouteContext) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { documentId } = await context.params;
+
+  if (!Types.ObjectId.isValid(documentId)) {
+    return NextResponse.json({ error: "Invalid document id." }, { status: 400 });
+  }
+
+  try {
+    await ensureCurrentUser();
+
+    const document = await DocumentModel.findOneAndDelete({
+      _id: documentId,
+      userId,
+    });
+
+    if (!document) {
+      return NextResponse.json(
+        { error: "Document not found." },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Could not delete document.";
+
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
