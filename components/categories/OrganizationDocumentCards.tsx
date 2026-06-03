@@ -51,7 +51,7 @@ export function OrganizationDocumentCard({
         <div className="flex shrink-0 items-center gap-2">
           <ViewDocumentLink documentId={document.id} isDragging={isDragging} />
           <button
-            className="rounded-full border border-red-200 bg-white px-3 py-1.5 text-[12px] font-medium uppercase leading-4 tracking-wide text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:text-red-300"
+            className=" border-red-100 bg-white px-3 py-1.5 text-[12px] font-medium uppercase leading-4 tracking-wide text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:text-red-300"
             disabled={isPending}
             onClick={() => onDelete(document.id, document.title)}
             type="button"
@@ -87,7 +87,7 @@ export function ModalDocumentCard({
 
   return (
     <article
-      className={`cursor-grab rounded-lg border border-[#c3c8c0]/30 bg-white p-3 text-left shadow-[0_4px_14px_rgba(80,96,81,0.04)] transition-opacity active:cursor-grabbing ${
+      className={`cursor-grab rounded-xl border border-[#c3c8c0]/30 bg-white p-5 text-left shadow-[0_6px_20px_rgba(80,96,81,0.06)] transition-all duration-200 hover:border-[#506051]/35 hover:shadow-[0_10px_28px_rgba(80,96,81,0.1)] active:cursor-grabbing ${
         isDragging ? "opacity-50" : ""
       }`}
       draggable
@@ -95,24 +95,26 @@ export function ModalDocumentCard({
       onDragStart={(event) => onDragStart(event, document.id)}
     >
       <DocumentTitleLink compact document={document} isDragging={isDragging} />
-      <p className="mt-1 line-clamp-2 text-sm leading-6 text-[#434842]">
+      <p className="mt-2 line-clamp-3 text-sm leading-6 text-[#434842]">
         {document.preview}
       </p>
       <p className="mt-2 text-[12px] font-medium uppercase leading-4 tracking-wide text-[#747872]">
         {document.updatedAtLabel}
       </p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <ViewDocumentLink documentId={document.id} isDragging={isDragging} />
+      <div className="mt-4 flex min-w-5 flex-wrap items-center justify-between gap-2 border-t border-[#c3c8c0]/15 pt-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-1">
+          <ViewDocumentLink documentId={document.id} isDragging={isDragging} />
+          <button
+            className="inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-[#506051] bg-[#506051] px-4 text-[11px] font-medium uppercase leading-4 tracking-wide text-white transition-colors hover:bg-[#3f5140] disabled:cursor-not-allowed disabled:border-[#9aa198] disabled:bg-[#9aa198]"
+            disabled={isPending}
+            onClick={() => onRemoveFromCategory(document.id)}
+            type="button"
+          >
+            {pendingAction === "remove" ? "Removing..." : "Remove"}
+          </button>
+        </div>
         <button
-          className="rounded-full border border-[#c3c8c0] bg-white px-3 py-1.5 text-[12px] font-medium uppercase leading-4 tracking-wide text-[#506051] transition-colors hover:bg-[#efeeec] disabled:cursor-not-allowed disabled:text-[#9aa198]"
-          disabled={isPending}
-          onClick={() => onRemoveFromCategory(document.id)}
-          type="button"
-        >
-          {pendingAction === "remove" ? "Removing..." : "Remove from category"}
-        </button>
-        <button
-          className="rounded-full border border-red-200 bg-white px-3 py-1.5 text-[12px] font-medium uppercase leading-4 tracking-wide text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:text-red-300"
+          className="ml-8 inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-red-200 bg-white px-4 text-[11px] font-medium uppercase leading-4 tracking-wide text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:text-red-300"
           disabled={isPending}
           onClick={() => onDelete(document.id, document.title)}
           type="button"
@@ -161,7 +163,7 @@ function ViewDocumentLink({
 }) {
   return (
     <Link
-      className="inline-flex w-fit rounded-full border border-[#c3c8c0] bg-white px-3 py-1.5 text-[12px] font-medium uppercase leading-4 tracking-wide text-[#506051] transition-colors hover:bg-[#efeeec]"
+      className="inline-flex h-9 w-fit shrink-0 items-center justify-center rounded-full border border-[#506051] bg-[#506051] px-4 text-[11px] font-medium uppercase leading-4 tracking-wide text-white transition-colors hover:bg-[#3f5140]"
       href={`/write?documentId=${documentId}`}
       onClick={(event: MouseEvent<HTMLAnchorElement>) => {
         if (isDragging) {
