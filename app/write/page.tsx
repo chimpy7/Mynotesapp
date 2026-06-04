@@ -1,8 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import { Types } from "mongoose";
 import { redirect } from "next/navigation";
-import { AuthControls } from "@/components/auth/AuthControls";
 import { CreateDocumentDraft } from "@/components/documents/CreateDocumentDraft";
+import { AppNavBar } from "@/components/layout/AppNavBar";
 import { ensureCurrentUser } from "@/lib/users";
 import { DocumentModel } from "@/models/Document";
 
@@ -54,15 +54,9 @@ export default async function WritePage({ searchParams }: WritePageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-50 px-4 py-8 text-zinc-950 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-        <div className="flex items-center justify-between gap-4 border-b border-zinc-200 pb-4">
-          <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">
-            Create document
-          </p>
-          <AuthControls />
-        </div>
-
+    <main className="flex min-h-screen flex-col overflow-x-hidden bg-[#faf9f7] font-[Arial,Helvetica,sans-serif] text-[#1a1c1b] selection:bg-[#506051]/20">
+      <AppNavBar activePage="write" />
+      <div className="flex flex-1 flex-col">
         <CreateDocumentDraft initialDocument={initialDocument} />
       </div>
     </main>

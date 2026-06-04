@@ -1,13 +1,12 @@
 import { auth } from "@clerk/nextjs/server";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { AuthControls } from "@/components/auth/AuthControls";
 import {
   OrganizationBoard,
   type OrganizationCategory,
   type OrganizationDocument,
 } from "@/components/categories/OrganizationBoard";
+import { AppNavBar } from "@/components/layout/AppNavBar";
 import { connectToDatabase } from "@/lib/db";
 import { ensureCurrentUser } from "@/lib/users";
 import { CategoryModel } from "@/models/Category";
@@ -88,43 +87,7 @@ export default async function DocumentsPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-[#faf9f7] font-[Arial,Helvetica,sans-serif] text-[#1a1c1b] selection:bg-[#506051]/20">
-      <nav className="sticky top-0 z-50 w-full border-b border-transparent bg-[#faf9f7]/95 backdrop-blur-sm">
-        <div className="mx-auto flex w-full max-w-[840px] items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-6">
-            <Link
-              className="font-[Georgia,serif] text-2xl font-medium tracking-normal text-[#1a1c1b]"
-              href="/documents"
-            >
-              Notes
-            </Link>
-            <div className="hidden items-center gap-6 pt-1 md:flex">
-              <Link
-                className="text-base leading-7 text-[#434842] transition-colors hover:text-[#506051]"
-                href="/write"
-              >
-                Writing
-              </Link>
-              <Link
-                aria-current="page"
-                className="border-b border-[#506051] pb-1 text-base font-semibold leading-7 text-[#506051]"
-                href="/documents"
-              >
-                Organization
-              </Link>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Link
-              className="hidden items-center justify-center rounded-full bg-[#506051] px-4 py-2 text-[13px] font-medium uppercase leading-4 tracking-wide text-white transition-colors hover:bg-[#526253] md:flex"
-              href="/write"
-            >
-              New Note
-            </Link>
-            <AuthControls />
-          </div>
-        </div>
-      </nav>
+      <AppNavBar activePage="documents" />
 
       <OrganizationBoard categories={categories} documents={documents} />
 

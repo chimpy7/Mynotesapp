@@ -1,13 +1,14 @@
 "use client";
 
-import Link from "next/link";
+import { useCallback, useState } from "react";
 
+import { DocumentDraftStatusBar } from "@/components/documents/DocumentDraftStatusBar";
+import { DocumentDraftTitleInput } from "@/components/documents/DocumentDraftTitleInput";
 import { RichTextEditor } from "@/components/editor/RichTextEditor";
 import {
   defaultDraftTitle,
   useDocumentDraftAutosave,
   type InitialDocument,
-  type SaveStatus,
 } from "@/components/documents/useDocumentDraftAutosave";
 
 type CreateDocumentDraftProps = {
@@ -16,89 +17,40 @@ type CreateDocumentDraftProps = {
 
 export function CreateDocumentDraft({ initialDocument }: CreateDocumentDraftProps) {
   const draft = useDocumentDraftAutosave({ initialDocument });
+  const [wordCount, setWordCount] = useState(0);
+
+  const updateWordCount = useCallback((plainText: string) => {
+    const words = plainText.trim().split(/\s+/).filter(Boolean);
+    setWordCount(words.length);
+  }, []);
 
   return (
     <>
-      <DocumentDraftHeader
-        documentId={draft.documentId}
+      <section
+        aria-label="Document editor"
+        className="mx-auto flex w-full max-w-[840px] flex-1 px-5 pb-28 pt-8 md:px-16 md:pb-32 md:pt-12"
+      >
+        <div className="relative flex min-h-[calc(100vh-200px)] w-full flex-col gap-8 rounded-xl border border-[#e3e2e0] bg-white px-8 py-8 shadow-[0_4px_40px_-10px_rgba(80,96,81,0.08)] transition-shadow hover:shadow-[0_8px_50px_-12px_rgba(80,96,81,0.12)] md:px-16 md:py-12">
+          <DocumentDraftTitleInput
+            onTitleChange={draft.updateTitle}
+            placeholder={defaultDraftTitle}
+            title={draft.title}
+          />
+          <RichTextEditor
+            initialEditorState={initialDocument?.serializedContent ?? undefined}
+            onPlainTextChange={updateWordCount}
+            onSerializedChange={draft.updateSerializedContent}
+            placeholder="Write your masterpiece here..."
+          />
+        </div>
+      </section>
+
+      <DocumentDraftStatusBar
         onSave={() => void draft.saveDraft()}
-        onTitleChange={draft.updateTitle}
         status={draft.status}
         statusMessage={draft.statusMessage}
-        title={draft.title}
+        wordCount={wordCount}
       />
-
-      <section aria-label="Document editor">
-        <RichTextEditor
-          initialEditorState={initialDocument?.serializedContent ?? undefined}
-          onSerializedChange={draft.updateSerializedContent}
-        />
-      </section>
     </>
-  );
-}
-
-type DocumentDraftHeaderProps = {
-  documentId: string | null;
-  onSave: () => void;
-  onTitleChange: (title: string) => void;
-  status: SaveStatus;
-  statusMessage: string;
-  title: string;
-};
-
-function DocumentDraftHeader({
-  documentId,
-  onSave,
-  onTitleChange,
-  status,
-  statusMessage,
-  title,
-}: DocumentDraftHeaderProps) {
-  return (
-    <header className="flex flex-col gap-4 border-b border-zinc-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
-      <div className="min-w-0 flex-1">
-        <label className="sr-only" htmlFor="document-title">
-          Document title
-        </label>
-        <input
-          className="w-full rounded-md border border-transparent bg-transparent px-0 py-1 text-3xl font-semibold tracking-normal text-zinc-950 outline-none transition-colors placeholder:text-zinc-400 focus:border-zinc-300 focus:bg-white focus:px-3"
-          id="document-title"
-          maxLength={120}
-          onChange={(event) => onTitleChange(event.target.value)}
-          placeholder={defaultDraftTitle}
-          type="text"
-          value={title}
-        />
-        <p className="mt-2 max-w-2xl text-base leading-7 text-zinc-600">
-          {documentId
-            ? "Edit your saved document and save changes."
-            : "Draft first, organize into categories later."}
-        </p>
-      </div>
-      <div className="flex flex-col items-start gap-2 sm:items-end">
-        <button
-          className="inline-flex h-10 items-center justify-center rounded-md bg-zinc-900 px-4 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-400"
-          disabled={status === "saving"}
-          onClick={onSave}
-          type="button"
-        >
-          {status === "saving" ? "Saving..." : "Save draft"}
-        </button>
-        <Link href="/documents" className="inline-flex h-10 items-center justify-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100">
-          Back to documents
-        </Link>
-        {statusMessage ? (
-          <p
-            className={`text-sm ${
-              status === "error" ? "text-red-600" : "text-zinc-500"
-            }`}
-            role={status === "error" ? "alert" : "status"}
-          >
-            {statusMessage}
-          </p>
-        ) : null}
-      </div>
-    </header>
   );
 }
