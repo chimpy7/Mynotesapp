@@ -4,8 +4,8 @@ import type {
   OrganizationCategory,
   OrganizationDocument,
 } from "@/components/categories/organizationTypes";
-import { DropZone } from "@/components/categories/DropZone";
 import { getCategoryDocumentCount } from "@/components/categories/categoryDocumentCount";
+import { DropZone } from "@/components/ui/DropZone";
 
 type CategoryCardProps = {
   activeDropTarget: string;

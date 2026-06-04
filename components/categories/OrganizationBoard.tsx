@@ -7,8 +7,6 @@ import { useMemo, useState } from "react";
 import { CategoryCard } from "@/components/categories/CategoryCard";
 import { CategoryContentModal } from "@/components/categories/CategoryContentModal";
 import { CreateCategoryModal } from "@/components/categories/CreateCategoryModal";
-import { DropZone } from "@/components/categories/DropZone";
-import { EmptyPanel } from "@/components/categories/EmptyPanel";
 import { OrganizationDocumentCard } from "@/components/categories/OrganizationDocumentCards";
 import type {
   DropTarget,
@@ -16,6 +14,9 @@ import type {
   OrganizationDocument,
   PendingDocumentAction,
 } from "@/components/categories/organizationTypes";
+import { DeleteConfirmationModal } from "@/components/ui/DeleteConfirmationModal";
+import { DropZone } from "@/components/ui/DropZone";
+import { EmptyPanel } from "@/components/ui/EmptyPanel";
 
 export type { OrganizationCategory, OrganizationDocument };
 
@@ -23,6 +24,29 @@ type OrganizationBoardProps = {
   categories: OrganizationCategory[];
   documents: OrganizationDocument[];
 };
+
+type ConfirmationTarget =
+  | {
+      id: string;
+      title: string;
+      type: "document";
+    }
+  | {
+      id: string;
+      name: string;
+      type: "category";
+    }
+  | {
+      categoryId: string;
+      id: string;
+      name: string;
+      type: "subcategory";
+    }
+  | {
+      id: string;
+      title: string;
+      type: "remove";
+    };
 
 async function sendJson(
   endpoint: string,
@@ -71,6 +95,8 @@ export function OrganizationBoard({
   const [deletingSubcategoryId, setDeletingSubcategoryId] = useState<
     string | null
   >(null);
+  const [confirmationTarget, setConfirmationTarget] =
+    useState<ConfirmationTarget | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
   const documentsByCategory = useMemo(() => {
@@ -212,7 +238,7 @@ export function OrganizationBoard({
     );
   }
 
-  async function removeDocumentFromCategory(documentId: string) {
+  async function performRemoveDocumentFromCategory(documentId: string) {
     setPendingDocumentAction({ documentId, action: "remove" });
 
     try {
@@ -227,11 +253,7 @@ export function OrganizationBoard({
     }
   }
 
-  async function deleteDocument(documentId: string, title: string) {
-    if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) {
-      return;
-    }
-
+  async function performDeleteDocument(documentId: string) {
     setPendingDocumentAction({ documentId, action: "delete" });
     setErrorMessage("");
 
@@ -247,15 +269,7 @@ export function OrganizationBoard({
     }
   }
 
-  async function deleteCategory(categoryId: string, name: string) {
-    if (
-      !window.confirm(
-        `Delete "${name}"? Notes in this category will become unorganized.`,
-      )
-    ) {
-      return;
-    }
-
+  async function performDeleteCategory(categoryId: string) {
     setDeletingCategoryId(categoryId);
     setErrorMessage("");
 
@@ -274,19 +288,10 @@ export function OrganizationBoard({
     }
   }
 
-  async function deleteSubcategory(
+  async function performDeleteSubcategory(
     categoryId: string,
     subcategoryId: string,
-    name: string,
   ) {
-    if (
-      !window.confirm(
-        `Delete "${name}"? Notes in this subcategory will stay in the parent category.`,
-      )
-    ) {
-      return;
-    }
-
     setDeletingSubcategoryId(subcategoryId);
     setErrorMessage("");
 
@@ -305,6 +310,93 @@ export function OrganizationBoard({
     } finally {
       setDeletingSubcategoryId(null);
     }
+  }
+
+  async function requestDeleteDocument(documentId: string, title: string) {
+    setConfirmationTarget({ id: documentId, title, type: "document" });
+  }
+
+  async function requestDeleteCategory(categoryId: string, name: string) {
+    setConfirmationTarget({ id: categoryId, name, type: "category" });
+  }
+
+  async function requestDeleteSubcategory(
+    categoryId: string,
+    subcategoryId: string,
+    name: string,
+  ) {
+    setConfirmationTarget({
+      categoryId,
+      id: subcategoryId,
+      name,
+      type: "subcategory",
+    });
+  }
+
+  async function requestRemoveDocumentFromCategory(documentId: string) {
+    const document = documents.find((current) => current.id === documentId);
+
+    setConfirmationTarget({
+      id: documentId,
+      title: document?.title ?? "this note",
+      type: "remove",
+    });
+  }
+
+  async function confirmAction() {
+    if (!confirmationTarget) {
+      return;
+    }
+
+    try {
+      if (confirmationTarget.type === "document") {
+        await performDeleteDocument(confirmationTarget.id);
+      } else if (confirmationTarget.type === "category") {
+        await performDeleteCategory(confirmationTarget.id);
+      } else if (confirmationTarget.type === "subcategory") {
+        await performDeleteSubcategory(
+          confirmationTarget.categoryId,
+          confirmationTarget.id,
+        );
+      } else {
+        await performRemoveDocumentFromCategory(confirmationTarget.id);
+      }
+
+      setConfirmationTarget(null);
+    } catch {
+      // The specific error is already shown in the board modal or page alert.
+    }
+  }
+
+  function getConfirmationModalContent(target: ConfirmationTarget) {
+    if (target.type === "document") {
+      return {
+        description: `This action will permanently remove '${target.title}'. You cannot undo this, but you can always start a new masterpiece.`,
+        title: "Delete thought?",
+      };
+    }
+
+    if (target.type === "category") {
+      return {
+        description: `This will delete '${target.name}'. Notes in this category will become unorganized.`,
+        title: "Delete category?",
+      };
+    }
+
+    if (target.type === "remove") {
+      return {
+        confirmLabel: "Remove",
+        description: `Do you want to remove '${target.title}' from this category? The note will move back to Unorganized.`,
+        icon: "remove" as const,
+        pendingLabel: "Removing...",
+        title: "Remove from category?",
+      };
+    }
+
+    return {
+      description: `This will delete '${target.name}'. Notes in this subcategory will stay in the parent category.`,
+      title: "Delete subcategory?",
+    };
   }
 
   function handleDragStart(
@@ -374,7 +466,7 @@ export function OrganizationBoard({
                   document={document}
                   isDragging={draggedDocumentId === document.id}
                   key={document.id}
-                  onDelete={deleteDocument}
+                  onDelete={requestDeleteDocument}
                   onDragEnd={handleDragEnd}
                   onDragStart={handleDragStart}
                   pendingAction={
@@ -463,15 +555,33 @@ export function OrganizationBoard({
           isDeletingCategory={deletingCategoryId === selectedCategory.id}
           onClose={() => setSelectedCategoryId(null)}
           onCreateSubcategory={createSubcategory}
-          onDeleteCategory={deleteCategory}
-          onDeleteDocument={deleteDocument}
-          onDeleteSubcategory={deleteSubcategory}
+          onDeleteCategory={requestDeleteCategory}
+          onDeleteDocument={requestDeleteDocument}
+          onDeleteSubcategory={requestDeleteSubcategory}
           onDragEnd={handleDragEnd}
           onDragOver={handleDragOver}
           onDragStart={handleDragStart}
           onDrop={handleDrop}
-          onRemoveDocumentFromCategory={removeDocumentFromCategory}
+          onRemoveDocumentFromCategory={requestRemoveDocumentFromCategory}
           pendingDocumentAction={pendingDocumentAction}
+        />
+      ) : null}
+
+      {confirmationTarget ? (
+        <DeleteConfirmationModal
+          {...getConfirmationModalContent(confirmationTarget)}
+          isPending={
+            confirmationTarget.type === "document" ||
+            confirmationTarget.type === "remove"
+              ? pendingDocumentAction?.documentId === confirmationTarget.id &&
+                pendingDocumentAction.action ===
+                  (confirmationTarget.type === "remove" ? "remove" : "delete")
+              : confirmationTarget.type === "category"
+                ? deletingCategoryId === confirmationTarget.id
+                : deletingSubcategoryId === confirmationTarget.id
+          }
+          onCancel={() => setConfirmationTarget(null)}
+          onConfirm={confirmAction}
         />
       ) : null}
     </>

@@ -5,8 +5,6 @@ import { useState } from "react";
 import { CategoryContentModalHeader } from "@/components/categories/CategoryContentModalHeader";
 import { CategoryDocumentsDropZone } from "@/components/categories/CategoryDocumentsDropZone";
 import { CreateSubcategoryForm } from "@/components/categories/CreateSubcategoryForm";
-import { ErrorAlert } from "@/components/categories/ErrorAlert";
-import { PaginationControls } from "@/components/categories/PaginationControls";
 import { SubcategoryDropZone } from "@/components/categories/SubcategoryDropZone";
 import { getCategoryDocumentCount } from "@/components/categories/categoryDocumentCount";
 import type {
@@ -18,6 +16,8 @@ import type {
   OrganizationDocument,
   PendingDocumentAction,
 } from "@/components/categories/organizationTypes";
+import { ErrorAlert } from "@/components/ui/ErrorAlert";
+import { PaginationControls } from "@/components/ui/PaginationControls";
 
 const subcategoriesPerPage = 2;
 

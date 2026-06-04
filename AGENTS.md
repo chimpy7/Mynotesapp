@@ -21,6 +21,12 @@ This is an MVP project. Do not over-engineer unless it clearly supports the exam
 
 ---
 
+## Local Workflow
+
+- Do not run `npm run dev`, `next dev`, or otherwise start the local dev server. The user will start the dev server and test the app manually.
+
+---
+
 ## Tech Stack
 
 Use the following stack unless explicitly told otherwise:

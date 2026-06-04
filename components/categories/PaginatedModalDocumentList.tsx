@@ -3,12 +3,12 @@
 import { useState } from "react";
 
 import { ModalDocumentCard } from "@/components/categories/OrganizationDocumentCards";
-import { PaginationControls } from "@/components/categories/PaginationControls";
 import type {
   DragStartHandler,
   OrganizationDocument,
   PendingDocumentAction,
 } from "@/components/categories/organizationTypes";
+import { PaginationControls } from "@/components/ui/PaginationControls";
 
 const documentsPerPage = 3;
 

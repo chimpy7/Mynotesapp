@@ -1,4 +1,3 @@
-import { DropZone } from "@/components/categories/DropZone";
 import { PaginatedModalDocumentList } from "@/components/categories/PaginatedModalDocumentList";
 import type {
   DragOverHandler,
@@ -7,6 +6,7 @@ import type {
   OrganizationDocument,
   PendingDocumentAction,
 } from "@/components/categories/organizationTypes";
+import { DropZone } from "@/components/ui/DropZone";
 
 type CategoryDocumentsDropZoneProps = {
   activeDropTarget: string;

@@ -1,6 +1,6 @@
 import type { FormEvent } from "react";
 
-import { ErrorAlert } from "@/components/categories/ErrorAlert";
+import { ErrorAlert } from "@/components/ui/ErrorAlert";
 
 type CreateCategoryModalProps = {
   errorMessage: string;
