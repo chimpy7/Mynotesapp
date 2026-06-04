@@ -9,6 +9,10 @@ type CreateCategoryModalProps = {
   onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
 };
 
+/**
+ * Modal used from the organization board to create a top-level category.
+ * The parent component owns form submission, validation errors, and loading state.
+ */
 export function CreateCategoryModal({
   errorMessage,
   isCreating,

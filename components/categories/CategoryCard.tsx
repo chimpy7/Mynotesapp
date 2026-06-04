@@ -5,6 +5,7 @@ import type {
   OrganizationDocument,
 } from "@/components/categories/organizationTypes";
 import { DropZone } from "@/components/categories/DropZone";
+import { getCategoryDocumentCount } from "@/components/categories/categoryDocumentCount";
 
 type CategoryCardProps = {
   activeDropTarget: string;
@@ -26,13 +27,11 @@ export function CategoryCard({
   onOpenCategory,
 }: CategoryCardProps) {
   const categoryTargetKey = `category:${category.id}`;
-  const documentCount =
-    directDocuments.length +
-    category.subcategories.reduce(
-      (count, subcategory) =>
-        count + (documentsBySubcategory.get(subcategory.id)?.length ?? 0),
-      0,
-    );
+  const documentCount = getCategoryDocumentCount(
+    category,
+    directDocuments,
+    documentsBySubcategory,
+  );
 
   return (
     <DropZone
