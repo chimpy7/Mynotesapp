@@ -36,11 +36,6 @@ export async function POST(request: NextRequest) {
       {
         document: {
           id: document._id.toString(),
-          title: document.title,
-          content: document.content,
-          categoryId: document.categoryId?.toString() ?? null,
-          subcategoryId: document.subcategoryId?.toString() ?? null,
-          createdAt: document.createdAt,
           updatedAt: document.updatedAt,
         },
       },

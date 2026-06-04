@@ -60,7 +60,5 @@ export function serializeCategory(category: Category) {
       id: subcategory._id.toString(),
       name: subcategory.name,
     })),
-    createdAt: category.createdAt,
-    updatedAt: category.updatedAt,
   };
 }

@@ -73,11 +73,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json({
       document: {
         id: document._id.toString(),
-        title: document.title,
-        content: document.content,
-        categoryId: document.categoryId?.toString() ?? null,
-        subcategoryId: document.subcategoryId?.toString() ?? null,
-        createdAt: document.createdAt,
         updatedAt: document.updatedAt,
       },
     });

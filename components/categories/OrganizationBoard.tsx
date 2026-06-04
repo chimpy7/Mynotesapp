@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import type { DragEvent, FormEvent } from "react";
 import { useMemo, useState } from "react";
 
@@ -24,6 +23,16 @@ type OrganizationBoardProps = {
   categories: OrganizationCategory[];
   documents: OrganizationDocument[];
 };
+
+type JsonResponse<T> = T & {
+  error?: string;
+};
+
+function sortCategoriesByName(categories: OrganizationCategory[]) {
+  return [...categories].sort((firstCategory, secondCategory) =>
+    firstCategory.name.localeCompare(secondCategory.name),
+  );
+}
 
 type ConfirmationTarget =
   | {
@@ -63,18 +72,23 @@ async function sendJson(
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  const data = (await response.json()) as { error?: string };
+  const data = (await response.json()) as JsonResponse<Record<string, unknown>>;
 
   if (!response.ok) {
     throw new Error(data.error ?? "The request failed.");
   }
+
+  return data;
 }
 
 export function OrganizationBoard({
-  categories,
-  documents,
+  categories: initialCategories,
+  documents: initialDocuments,
 }: OrganizationBoardProps) {
-  const router = useRouter();
+  const [categories, setCategories] =
+    useState<OrganizationCategory[]>(initialCategories);
+  const [documents, setDocuments] =
+    useState<OrganizationDocument[]>(initialDocuments);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
@@ -157,10 +171,21 @@ export function OrganizationBoard({
     setErrorMessage("");
 
     try {
-      await sendJson("/api/categories", "POST", { name });
+      const data = (await sendJson("/api/categories", "POST", {
+        name,
+      })) as JsonResponse<{ category?: OrganizationCategory }>;
+
+      if (!data.category) {
+        throw new Error("Could not create category.");
+      }
+
+      const category = data.category;
+
+      setCategories((currentCategories) =>
+        sortCategoriesByName([...currentCategories, category]),
+      );
       form.reset();
       setIsCategoryModalOpen(false);
-      router.refresh();
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Could not create category.",
@@ -188,11 +213,26 @@ export function OrganizationBoard({
     setErrorMessage("");
 
     try {
-      await sendJson(`/api/categories/${categoryId}/subcategories`, "POST", {
-        name,
-      });
+      const data = (await sendJson(
+        `/api/categories/${categoryId}/subcategories`,
+        "POST",
+        {
+          name,
+        },
+      )) as JsonResponse<{ category?: OrganizationCategory }>;
+
+      if (!data.category) {
+        throw new Error("Could not create subcategory.");
+      }
+
+      const updatedCategory = data.category;
+
+      setCategories((currentCategories) =>
+        currentCategories.map((category) =>
+          category.id === updatedCategory.id ? updatedCategory : category,
+        ),
+      );
       form.reset();
-      router.refresh();
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -217,7 +257,17 @@ export function OrganizationBoard({
         categoryId,
         subcategoryId,
       });
-      router.refresh();
+      setDocuments((currentDocuments) =>
+        currentDocuments.map((document) =>
+          document.id === documentId
+            ? {
+                ...document,
+                categoryId,
+                subcategoryId,
+              }
+            : document,
+        ),
+      );
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : fallbackMessage,
@@ -259,7 +309,9 @@ export function OrganizationBoard({
 
     try {
       await sendJson(`/api/documents/${documentId}`, "DELETE");
-      router.refresh();
+      setDocuments((currentDocuments) =>
+        currentDocuments.filter((document) => document.id !== documentId),
+      );
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Could not delete document.",
@@ -275,10 +327,23 @@ export function OrganizationBoard({
 
     try {
       await sendJson(`/api/categories/${categoryId}`, "DELETE");
+      setCategories((currentCategories) =>
+        currentCategories.filter((category) => category.id !== categoryId),
+      );
+      setDocuments((currentDocuments) =>
+        currentDocuments.map((document) =>
+          document.categoryId === categoryId
+            ? {
+                ...document,
+                categoryId: null,
+                subcategoryId: null,
+              }
+            : document,
+        ),
+      );
       setSelectedCategoryId((currentCategoryId) =>
         currentCategoryId === categoryId ? null : currentCategoryId,
       );
-      router.refresh();
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Could not delete category.",
@@ -300,7 +365,29 @@ export function OrganizationBoard({
         `/api/categories/${categoryId}/subcategories/${subcategoryId}`,
         "DELETE",
       );
-      router.refresh();
+      setCategories((currentCategories) =>
+        currentCategories.map((category) =>
+          category.id === categoryId
+            ? {
+                ...category,
+                subcategories: category.subcategories.filter(
+                  (subcategory) => subcategory.id !== subcategoryId,
+                ),
+              }
+            : category,
+        ),
+      );
+      setDocuments((currentDocuments) =>
+        currentDocuments.map((document) =>
+          document.categoryId === categoryId &&
+          document.subcategoryId === subcategoryId
+            ? {
+                ...document,
+                subcategoryId: null,
+              }
+            : document,
+        ),
+      );
     } catch (error) {
       setErrorMessage(
         error instanceof Error
