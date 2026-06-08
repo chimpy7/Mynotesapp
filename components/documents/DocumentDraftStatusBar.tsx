@@ -2,6 +2,9 @@ import { NewDocumentLink } from "@/components/documents/NewDocumentLink";
 import type { SaveStatus } from "@/components/documents/useDocumentDraftAutosave";
 
 type DocumentDraftStatusBarProps = {
+  characterCount: number;
+  isAtDocumentLimit: boolean;
+  maxCharacterCount: number;
   onSave: () => void;
   status: SaveStatus;
   statusMessage: string;
@@ -9,18 +12,28 @@ type DocumentDraftStatusBarProps = {
 };
 
 export function DocumentDraftStatusBar({
+  characterCount,
+  isAtDocumentLimit,
+  maxCharacterCount,
   onSave,
   status,
   statusMessage,
   wordCount,
 }: DocumentDraftStatusBarProps) {
-  const statusLabel = getStatusLabel(status, statusMessage);
+  const statusLabel = getStatusLabel(status, statusMessage, isAtDocumentLimit);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#faf9f7]/90 px-5 py-4 backdrop-blur-sm md:px-8">
       <div className="mx-auto flex w-full max-w-[840px] items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-4 text-[13px] font-medium uppercase leading-4 tracking-wide text-[#747872]">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 text-[13px] font-medium uppercase leading-4 tracking-wide text-[#747872]">
           <span>{wordCount} words</span>
+          <span className="h-1 w-1 rounded-full bg-[#c3c8c0]" />
+          <span
+            className={isAtDocumentLimit ? "text-[#8a5a00]" : undefined}
+          >
+            {Math.min(characterCount, maxCharacterCount)} / {maxCharacterCount}{" "}
+            characters
+          </span>
           <span className="h-1 w-1 rounded-full bg-[#c3c8c0]" />
           <span
             className={
@@ -54,7 +67,11 @@ export function DocumentDraftStatusBar({
   );
 }
 
-function getStatusLabel(status: SaveStatus, statusMessage: string) {
+function getStatusLabel(
+  status: SaveStatus,
+  statusMessage: string,
+  isAtDocumentLimit: boolean,
+) {
   if (status === "saving") {
     return "Saving";
   }
@@ -65,6 +82,10 @@ function getStatusLabel(status: SaveStatus, statusMessage: string) {
 
   if (status === "saved") {
     return statusMessage || "Saved";
+  }
+
+  if (isAtDocumentLimit) {
+    return "Page limit reached";
   }
 
   return "Draft";

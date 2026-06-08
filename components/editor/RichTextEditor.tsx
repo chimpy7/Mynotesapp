@@ -8,6 +8,7 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { $trimTextContentFromAnchor } from "@lexical/selection";
 import { mergeRegister } from "@lexical/utils";
 import {
   $getSelection,
@@ -26,7 +27,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 type RichTextEditorProps = {
   initialEditorState?: string;
+  maxPlainTextLength?: number;
   onSerializedChange?: (serializedState: string) => void;
+  onLimitChange?: (isAtLimit: boolean) => void;
   onPlainTextChange?: (plainText: string) => void;
   placeholder?: string;
 };
@@ -83,6 +86,8 @@ const toolbarAlignments: Array<{
 
 export function RichTextEditor({
   initialEditorState,
+  maxPlainTextLength,
+  onLimitChange,
   onSerializedChange,
   onPlainTextChange,
   placeholder = "Start writing...",
@@ -101,24 +106,37 @@ export function RichTextEditor({
 
   const handleChange = useCallback(
     (editorState: EditorState) => {
-      onSerializedChange?.(JSON.stringify(editorState.toJSON()));
+      let plainText = "";
+
       editorState.read(() => {
-        onPlainTextChange?.($getRoot().getTextContent());
+        plainText = $getRoot().getTextContent();
       });
+
+      onPlainTextChange?.(plainText);
+
+      if (
+        typeof maxPlainTextLength === "number" &&
+        plainText.length > maxPlainTextLength
+      ) {
+        onLimitChange?.(true);
+        return;
+      }
+
+      onSerializedChange?.(JSON.stringify(editorState.toJSON()));
     },
-    [onPlainTextChange, onSerializedChange],
+    [maxPlainTextLength, onLimitChange, onPlainTextChange, onSerializedChange],
   );
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
-      <div className="flex min-h-[520px] flex-col gap-6">
+      <div className="flex min-h-0 flex-1 flex-col gap-6">
         <ToolbarPlugin />
-        <div className="relative min-h-[420px] flex-1">
+        <div className="relative min-h-0 flex-1 overflow-y-auto pr-2">
           <RichTextPlugin
             contentEditable={
               <ContentEditable
                 aria-placeholder={placeholder}
-                className="min-h-[420px] resize-none font-[Georgia,serif] text-[24px] font-medium leading-9 text-[#434842] outline-none"
+                className="min-h-full resize-none font-[Georgia,serif] text-[24px] font-medium leading-9 text-[#434842] outline-none"
                 placeholder={
                   <div className="pointer-events-none absolute left-0 top-0 font-[Georgia,serif] text-[24px] font-medium leading-9 text-[#c3c8c0]">
                     {placeholder}
@@ -132,10 +150,48 @@ export function RichTextEditor({
           <AutoFocusPlugin />
           <OnChangePlugin onChange={handleChange} ignoreSelectionChange />
           <InitialPlainTextPlugin onPlainTextChange={onPlainTextChange} />
+          {typeof maxPlainTextLength === "number" ? (
+            <CharacterLimitPlugin
+              maxLength={maxPlainTextLength}
+              onLimitChange={onLimitChange}
+            />
+          ) : null}
         </div>
       </div>
     </LexicalComposer>
   );
+}
+
+function CharacterLimitPlugin({
+  maxLength,
+  onLimitChange,
+}: {
+  maxLength: number;
+  onLimitChange?: (isAtLimit: boolean) => void;
+}) {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    return editor.registerTextContentListener((textContent) => {
+      const extraCharacters = textContent.length - maxLength;
+
+      onLimitChange?.(extraCharacters >= 0);
+
+      if (extraCharacters <= 0) {
+        return;
+      }
+
+      editor.update(() => {
+        const selection = $getSelection();
+
+        if ($isRangeSelection(selection)) {
+          $trimTextContentFromAnchor(editor, selection.anchor, extraCharacters);
+        }
+      });
+    });
+  }, [editor, maxLength, onLimitChange]);
+
+  return null;
 }
 
 function ToolbarPlugin() {

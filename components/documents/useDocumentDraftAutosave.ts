@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import {
+  documentLengthErrorMessage,
+  isDocumentContentWithinLimits,
+} from "@/lib/documentLimits";
+
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export type InitialDocument = {
@@ -84,6 +89,11 @@ export function useDocumentDraftAutosave({
     try {
       const titleToSave = title.trim() || defaultDraftTitle;
       const content = serializedContent ? JSON.parse(serializedContent) : null;
+
+      if (!isDocumentContentWithinLimits(content)) {
+        throw new Error(documentLengthErrorMessage);
+      }
+
       const endpoint = documentId
         ? `/api/documents/${documentId}`
         : "/api/documents";
