@@ -1,5 +1,4 @@
-import Link from "next/link";
-
+import { NewDocumentLink } from "@/components/documents/NewDocumentLink";
 import type { SaveStatus } from "@/components/documents/useDocumentDraftAutosave";
 
 type DocumentDraftStatusBarProps = {
@@ -44,12 +43,11 @@ export function DocumentDraftStatusBar({
           >
             {status === "saving" ? "Saving" : "Save"}
           </button>
-          <Link
+          <NewDocumentLink
             className="inline-flex h-10 items-center justify-center rounded-full bg-[#506051] px-4 text-[13px] font-medium uppercase leading-4 tracking-wide text-white transition-colors hover:bg-[#526253]"
-            href="/documents"
           >
-            Done
-          </Link>
+            New Note
+          </NewDocumentLink>
         </div>
       </div>
     </div>

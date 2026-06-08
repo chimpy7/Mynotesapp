@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AuthControls } from "@/components/auth/AuthControls";
+import { NewDocumentLink } from "@/components/documents/NewDocumentLink";
 
 type AppNavBarProps = {
   activePage: "write" | "documents";
@@ -45,12 +46,11 @@ export function AppNavBar({ activePage }: AppNavBarProps) {
         </div>
 
         <div className="flex items-center gap-4">
-          <Link
+          <NewDocumentLink
             className="hidden items-center justify-center rounded-full bg-[#506051] px-4 py-2 text-[13px] font-medium uppercase leading-4 tracking-wide text-white transition-colors hover:bg-[#526253] md:flex"
-            href="/write"
           >
             New Note
-          </Link>
+          </NewDocumentLink>
           <AuthControls />
         </div>
       </div>

@@ -9,6 +9,7 @@ import { DocumentModel } from "@/models/Document";
 type WritePageProps = {
   searchParams?: Promise<{
     documentId?: string | string[];
+    new?: string | string[];
   }>;
 };
 
@@ -24,6 +25,10 @@ export default async function WritePage({ searchParams }: WritePageProps) {
   const documentId = Array.isArray(rawDocumentId)
     ? rawDocumentId[0]
     : rawDocumentId;
+  const rawNewDraftKey = resolvedSearchParams?.new;
+  const newDraftKey = Array.isArray(rawNewDraftKey)
+    ? rawNewDraftKey[0]
+    : rawNewDraftKey;
   let initialDocument:
     | {
         id: string;
@@ -57,7 +62,11 @@ export default async function WritePage({ searchParams }: WritePageProps) {
     <main className="flex min-h-screen flex-col overflow-x-hidden bg-[#faf9f7] font-[Arial,Helvetica,sans-serif] text-[#1a1c1b] selection:bg-[#506051]/20">
       <AppNavBar activePage="write" />
       <div className="flex flex-1 flex-col">
-        <CreateDocumentDraft initialDocument={initialDocument} />
+        <CreateDocumentDraft
+          draftKey={initialDocument?.id ?? newDraftKey ?? "blank"}
+          initialDocument={initialDocument}
+          key={initialDocument?.id ?? newDraftKey ?? "blank"}
+        />
       </div>
     </main>
   );

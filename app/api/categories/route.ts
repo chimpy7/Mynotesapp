@@ -9,6 +9,10 @@ import { createCategorySchema } from "@/schemas/category";
 
 export const runtime = "nodejs";
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
 
@@ -20,6 +24,18 @@ export async function POST(request: NextRequest) {
     const body = createCategorySchema.parse(await request.json());
 
     await ensureCurrentUser();
+
+    const duplicateNamePattern = new RegExp(
+      `^${escapeRegExp(body.name)}$`,
+      "i",
+    );
+
+    if (await CategoryModel.exists({ userId, name: duplicateNamePattern })) {
+      return NextResponse.json(
+        { error: "A category with this name already exists." },
+        { status: 409 },
+      );
+    }
 
     const category = await CategoryModel.create({
       name: body.name,

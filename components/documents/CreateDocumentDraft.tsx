@@ -12,10 +12,14 @@ import {
 } from "@/components/documents/useDocumentDraftAutosave";
 
 type CreateDocumentDraftProps = {
+  draftKey: string;
   initialDocument?: InitialDocument;
 };
 
-export function CreateDocumentDraft({ initialDocument }: CreateDocumentDraftProps) {
+export function CreateDocumentDraft({
+  draftKey,
+  initialDocument,
+}: CreateDocumentDraftProps) {
   const draft = useDocumentDraftAutosave({ initialDocument });
   const [wordCount, setWordCount] = useState(0);
 
@@ -38,6 +42,7 @@ export function CreateDocumentDraft({ initialDocument }: CreateDocumentDraftProp
           />
           <RichTextEditor
             initialEditorState={initialDocument?.serializedContent ?? undefined}
+            key={draftKey}
             onPlainTextChange={updateWordCount}
             onSerializedChange={draft.updateSerializedContent}
             placeholder="Write your masterpiece here..."
